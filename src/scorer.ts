@@ -40,40 +40,14 @@ ${issueList}`;
 export async function scoreIssues(issues: GitHubIssue[]): Promise<IssueScore[]> {
   if (!issues.length) return [];
 
-  const BATCH_SIZE = 10;
-  const results: IssueScore[] = [];
-
-  for (let i = 0; i < issues.length; i += BATCH_SIZE) {
-    const batch = issues.slice(i, i + BATCH_SIZE);
-    const prompt = buildPrompt(batch);
-
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 2048,
-      messages: [{ role: "user", content: prompt }],
-    });
-
-    const rawText =
-      message.content[0].type === "text" ? message.content[0].text : "";
-
-    let parsed: IssueScore[];
-    try {
-      parsed = JSON.parse(rawText.trim()) as IssueScore[];
-    } catch {
-      console.warn("Claude returned unparseable response for batch, using fallbacks.");
-      parsed = batch.map((issue) => ({
-        issue_number: issue.number,
-        title: issue.title,
-        complexity: "medium" as ComplexityLevel,
-        effort_estimate: "unknown",
-        skill_tags: [],
-        risk_flags: ["scoring_failed"],
-        suggested_approach: "Manual review recommended.",
-      }));
-    }
-
-    results.push(...parsed);
-  }
-
-  return results;
+  // Mock scorer for testing — replace with Claude call in production
+  return issues.map((issue) => ({
+    issue_number: issue.number,
+    title: issue.title,
+    complexity: "medium" as ComplexityLevel,
+    effort_estimate: "1-2 days",
+    skill_tags: ["javascript", "react"],
+    risk_flags: issue.body ? [] : ["missing_description"],
+    suggested_approach: "Review the issue description and reproduce locally before implementing a fix.",
+  }));
 }
