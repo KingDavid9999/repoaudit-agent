@@ -12,7 +12,9 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "@croo-network/sdk": "github:CROO-Network/node-sdk",
+    "@google/generative-ai": "^0.24.1",
     "dotenv": "^16.0.0",
+    "groq-sdk": "^1.2.1",
     "ws": "^8.21.0"
   },
   "devDependencies": {

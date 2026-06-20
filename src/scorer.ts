@@ -1,9 +1,10 @@
-import Anthropic from "@anthropic-ai/sdk";
+import Groq from "groq-sdk";
 import { GitHubIssue, IssueScore, ComplexityLevel } from "./types";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const MAX_BODY_CHARS = 1500;
+
 function buildPrompt(issues: GitHubIssue[]): string {
   const issueList = issues
     .map((i) => {
@@ -37,17 +38,48 @@ Return ONLY a valid JSON array. No markdown, no explanation, no backticks.
 Issues to evaluate:
 ${issueList}`;
 }
+
 export async function scoreIssues(issues: GitHubIssue[]): Promise<IssueScore[]> {
   if (!issues.length) return [];
 
-  // Mock scorer for testing — replace with Claude call in production
-  return issues.map((issue) => ({
-    issue_number: issue.number,
-    title: issue.title,
-    complexity: "medium" as ComplexityLevel,
-    effort_estimate: "1-2 days",
-    skill_tags: ["javascript", "react"],
-    risk_flags: issue.body ? [] : ["missing_description"],
-    suggested_approach: "Review the issue description and reproduce locally before implementing a fix.",
-  }));
+  const BATCH_SIZE = 10;
+  const results: IssueScore[] = [];
+
+  for (let i = 0; i < issues.length; i += BATCH_SIZE) {
+    const batch = issues.slice(i, i + BATCH_SIZE);
+    const prompt = buildPrompt(batch);
+
+    let parsed: IssueScore[];
+    try {
+      const completion = await client.chat.completions.create({
+        model: "llama-3.3-70b-versatile",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.1,
+      });
+
+      let rawText = completion.choices[0]?.message?.content?.trim() ?? "";
+      rawText = rawText
+        .replace(/^```json\s*/i, "")
+        .replace(/^```\s*/i, "")
+        .replace(/```\s*$/i, "")
+        .trim();
+
+      parsed = JSON.parse(rawText) as IssueScore[];
+    } catch (err) {
+      console.warn("Groq error:", err);
+      parsed = batch.map((issue) => ({
+        issue_number: issue.number,
+        title: issue.title,
+        complexity: "medium" as ComplexityLevel,
+        effort_estimate: "unknown",
+        skill_tags: [],
+        risk_flags: ["scoring_failed"],
+        suggested_approach: "Manual review recommended.",
+      }));
+    }
+
+    results.push(...parsed);
+  }
+
+  return results;
 }
