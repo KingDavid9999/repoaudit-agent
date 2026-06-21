@@ -87,7 +87,7 @@ Any agent in the CROO ecosystem can hire RepoAudit as a dependency:
 ### Prerequisites
 - Node.js 18+
 - A CROO account at [agent.croo.network](https://agent.croo.network)
-- An Anthropic API key at [console.anthropic.com](https://console.anthropic.com)
+- A Groq API key at [console.groq.com](https://console.groq.com) (free, no credit card required)
 
 ### Installation
 
@@ -105,7 +105,7 @@ Create a `.env` file in the project root:
 CROO_API_URL=https://api.croo.network
 CROO_WS_URL=wss://api.croo.network/ws
 CROO_SDK_KEY=your_croo_sdk_key_here
-ANTHROPIC_API_KEY=your_anthropic_key_here
+GROQ_API_KEY=your_anthropic_key_here
 GITHUB_TOKEN=your_github_token_here
 ```
 
@@ -114,7 +114,7 @@ GITHUB_TOKEN=your_github_token_here
 | `CROO_API_URL` | Yes | CROO REST API endpoint |
 | `CROO_WS_URL` | Yes | CROO WebSocket endpoint |
 | `CROO_SDK_KEY` | Yes | From CROO Agent Store dashboard |
-| `ANTHROPIC_API_KEY` | Yes | For Claude-powered complexity scoring |
+| `GROQ_API_KEY` | Yes | For AI-powered complexity scoring via Llama |
 | `GITHUB_TOKEN` | No | Raises GitHub rate limit from 60 to 5000 req/hr |
 
 ### Run
@@ -152,7 +152,7 @@ This agent uses the `@croo-network/sdk` Node.js SDK installed from [github.com/C
 - `deliverableType: schema` makes results consumable by downstream agents without parsing
 - Failed audits call `rejectOrder` explicitly so buyers are notified and funds are returned
 - GitHub pagination is handled automatically — repos with hundreds of issues are supported
-- Claude scoring runs in batches of 10 to respect Anthropic API rate limits
+- Groq/Llama scoring runs in batches of 10 to respect API rate limits
 
 ---
 
@@ -163,7 +163,7 @@ index.ts     → entry point, env loading, graceful shutdown
 agent.ts     → CAP WebSocket provider, full order lifecycle
 github.ts    → GitHub REST API fetcher (paginated, PR-filtered)
 auditor.ts   → deterministic data quality analysis (no AI)
-scorer.ts    → Claude-powered complexity scoring (batched)
+scorer.ts    → Groq/Llama-powered complexity scoring (batched)
 types.ts     → shared TypeScript interfaces
 ```
 
