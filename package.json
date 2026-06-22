@@ -5,9 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
   "build": "tsc",
-  "start": "node dist/index.js"
-  "dev": "ts-node --project tsconfig.json src/index.ts",
-  "postinstall": "cd node_modules/@croo-network/sdk && npm install && npm run build"
+  "start": "node dist/index.js",
+  "dev": "ts-node --project tsconfig.json src/index.ts"
 },
   "license": "MIT",
   "dependencies": {
