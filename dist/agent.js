@@ -36,9 +36,7 @@ async function runAudit(req) {
     console.log(`[audit] Fetched ${issues.length} issues.`);
     const dataQuality = (0, auditor_1.auditDataQuality)(issues);
     console.log(`[audit] Data quality analysis complete.`);
-    const issuesToScore = req.issue_numbers?.length
-        ? issues
-        : issues.slice(0, 20);
+    const issuesToScore = req.issue_numbers?.length ? issues : issues.slice(0, 20);
     const issueComplexity = await (0, scorer_1.scoreIssues)(issuesToScore);
     console.log(`[audit] Scored ${issueComplexity.length} issues.`);
     const q = dataQuality;
@@ -81,7 +79,11 @@ async function startAgent() {
             return;
         console.log(`[cap] Order paid: ${e.order_id}. Starting audit...`);
         try {
-            const req = parseRequest(e.requirements);
+            // Handle requirements arriving as JSON string or plain object
+            const raw = typeof e.requirements === "string"
+                ? JSON.parse(e.requirements)
+                : e.requirements;
+            const req = parseRequest(raw);
             const result = await runAudit(req);
             await client.deliverOrder(e.order_id, {
                 deliverableType: sdk_1.DeliverableType.Schema,
@@ -101,6 +103,8 @@ async function startAgent() {
         console.log(`[cap] Order completed and settled: ${e.order_id}`);
     });
     stream.on(sdk_1.EventType.NegotiationExpired, (e) => {
+        if (!e.negotiation_id)
+            return;
         console.log(`[cap] Negotiation expired: ${e.negotiation_id}`);
     });
 }

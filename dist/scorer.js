@@ -4,8 +4,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.scoreIssues = scoreIssues;
-const sdk_1 = __importDefault(require("@anthropic-ai/sdk"));
-const client = new sdk_1.default({ apiKey: process.env.ANTHROPIC_API_KEY });
+const groq_sdk_1 = __importDefault(require("groq-sdk"));
+const client = new groq_sdk_1.default({ apiKey: process.env.GROQ_API_KEY });
 const MAX_BODY_CHARS = 1500;
 function buildPrompt(issues) {
     const issueList = issues
@@ -47,18 +47,23 @@ async function scoreIssues(issues) {
     for (let i = 0; i < issues.length; i += BATCH_SIZE) {
         const batch = issues.slice(i, i + BATCH_SIZE);
         const prompt = buildPrompt(batch);
-        const message = await client.messages.create({
-            model: "claude-sonnet-4-6",
-            max_tokens: 2048,
-            messages: [{ role: "user", content: prompt }],
-        });
-        const rawText = message.content[0].type === "text" ? message.content[0].text : "";
         let parsed;
         try {
-            parsed = JSON.parse(rawText.trim());
+            const completion = await client.chat.completions.create({
+                model: "llama-3.3-70b-versatile",
+                messages: [{ role: "user", content: prompt }],
+                temperature: 0.1,
+            });
+            let rawText = completion.choices[0]?.message?.content?.trim() ?? "";
+            rawText = rawText
+                .replace(/^```json\s*/i, "")
+                .replace(/^```\s*/i, "")
+                .replace(/```\s*$/i, "")
+                .trim();
+            parsed = JSON.parse(rawText);
         }
-        catch {
-            console.warn("Claude returned unparseable response for batch, using fallbacks.");
+        catch (err) {
+            console.warn("Groq error:", err);
             parsed = batch.map((issue) => ({
                 issue_number: issue.number,
                 title: issue.title,
