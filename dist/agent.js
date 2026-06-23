@@ -78,11 +78,13 @@ async function startAgent() {
         if (!e.order_id)
             return;
         console.log(`[cap] Order paid: ${e.order_id}. Starting audit...`);
+        const eRaw = e.raw;
+        console.log("[debug] e.raw:", JSON.stringify(eRaw, null, 2));
         try {
-            // Handle requirements arriving as JSON string or plain object
-            const raw = typeof e.requirements === "string"
-                ? JSON.parse(e.requirements)
-                : e.requirements;
+            const rawPayload = eRaw?.requirements;
+            const raw = typeof rawPayload === "string"
+                ? JSON.parse(rawPayload)
+                : rawPayload;
             const req = parseRequest(raw);
             const result = await runAudit(req);
             await client.deliverOrder(e.order_id, {
