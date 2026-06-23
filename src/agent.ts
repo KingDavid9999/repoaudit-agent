@@ -97,12 +97,13 @@ export async function startAgent() {
   stream.on(EventType.OrderPaid, async (e: Event) => {
     if (!e.order_id) return;
     console.log(`[cap] Order paid: ${e.order_id}. Starting audit...`);
+    console.log("[debug] e.raw:", JSON.stringify(e.raw, null, 2));
 
     try {
-      // Handle requirements arriving as JSON string or plain object
-      const raw = typeof e.requirements === "string"
-        ? JSON.parse(e.requirements)
-        : e.requirements;
+      const rawPayload = e.raw?.requirements;
+      const raw = typeof rawPayload === "string"
+        ? JSON.parse(rawPayload)
+        : rawPayload;
 
       const req = parseRequest(raw);
       const result = await runAudit(req);
