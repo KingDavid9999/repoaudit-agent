@@ -17,15 +17,25 @@ function parseRequest(raw) {
     if (typeof obj.repo !== "string" || !obj.repo.includes("/")) {
         throw new Error('Invalid request: "repo" must be in "owner/repo" format.');
     }
+    let issueNumbers;
     if (obj.issue_numbers !== undefined) {
-        if (!Array.isArray(obj.issue_numbers) ||
-            !obj.issue_numbers.every((n) => typeof n === "number")) {
-            throw new Error('Invalid request: "issue_numbers" must be an array of numbers.');
+        // Handle string input e.g. "1" or "1,2,3"
+        if (typeof obj.issue_numbers === "string") {
+            issueNumbers = obj.issue_numbers
+                .split(",")
+                .map((n) => parseInt(n.trim(), 10))
+                .filter((n) => !isNaN(n));
+        }
+        // Handle array input e.g. [1, 2, 3]
+        else if (Array.isArray(obj.issue_numbers)) {
+            issueNumbers = obj.issue_numbers
+                .map((n) => typeof n === "string" ? parseInt(n.trim(), 10) : Number(n))
+                .filter((n) => !isNaN(n));
         }
     }
     return {
         repo: obj.repo,
-        issue_numbers: obj.issue_numbers,
+        issue_numbers: issueNumbers,
     };
 }
 async function runAudit(req) {
