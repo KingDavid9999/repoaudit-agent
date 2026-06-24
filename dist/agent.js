@@ -78,14 +78,14 @@ async function startAgent() {
         if (!e.order_id)
             return;
         console.log(`[cap] Order paid: ${e.order_id}. Starting audit...`);
-        const eRaw = e.raw;
-        console.log("[debug] e.raw:", JSON.stringify(eRaw, null, 2));
         try {
-            const rawPayload = eRaw?.requirements;
-            const raw = typeof rawPayload === "string"
-                ? JSON.parse(rawPayload)
-                : rawPayload;
-            const req = parseRequest(raw);
+            // Requirements aren't in the WebSocket event — fetch the order separately
+            const order = await client.getOrder(e.order_id);
+            console.log("[debug] order.requirements:", JSON.stringify(order.requirements, null, 2));
+            const rawPayload = typeof order.requirements === "string"
+                ? JSON.parse(order.requirements)
+                : order.requirements;
+            const req = parseRequest(rawPayload);
             const result = await runAudit(req);
             await client.deliverOrder(e.order_id, {
                 deliverableType: sdk_1.DeliverableType.Schema,

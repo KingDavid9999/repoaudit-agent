@@ -32,12 +32,13 @@ declare module "@croo-network/sdk" {
   };
 
   export class AgentClient {
-    constructor(config: Config, sdkKey: string);
-    connectWebSocket(): Promise<EventStream>;
-    acceptNegotiation(negotiationId: string): Promise<unknown>;
-    deliverOrder(orderId: string, req: DeliverOrderRequest): Promise<unknown>;
-    rejectOrder(orderId: string, reason: string): Promise<unknown>;
-  }
+  constructor(config: Config, sdkKey: string);
+  connectWebSocket(): Promise<EventStream>;
+  acceptNegotiation(negotiationId: string): Promise<unknown>;
+  getOrder(orderId: string): Promise<{ requirements: unknown }>;
+  deliverOrder(orderId: string, req: DeliverOrderRequest): Promise<unknown>;
+  rejectOrder(orderId: string, reason: string): Promise<unknown>;
+}
 
   export class EventStream {
     on(event: string, handler: (e: Event) => void | Promise<void>): void;

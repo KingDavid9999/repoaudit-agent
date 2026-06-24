@@ -95,33 +95,33 @@ export async function startAgent() {
   });
 
   stream.on(EventType.OrderPaid, async (e: Event) => {
-    if (!e.order_id) return;
-    console.log(`[cap] Order paid: ${e.order_id}. Starting audit...`);
-    const eRaw = (e as any).raw;
-console.log("[debug] e.raw:", JSON.stringify(eRaw, null, 2));
+  if (!e.order_id) return;
+  console.log(`[cap] Order paid: ${e.order_id}. Starting audit...`);
 
-try {
-  const rawPayload = eRaw?.requirements;
-      const raw = typeof rawPayload === "string"
-        ? JSON.parse(rawPayload)
-        : rawPayload;
+  try {
+    // Requirements aren't in the WebSocket event — fetch the order separately
+    const order = await client.getOrder(e.order_id);
+    console.log("[debug] order.requirements:", JSON.stringify(order.requirements, null, 2));
 
-      const req = parseRequest(raw);
-      const result = await runAudit(req);
+    const rawPayload = typeof order.requirements === "string"
+      ? JSON.parse(order.requirements)
+      : order.requirements;
 
-      await client.deliverOrder(e.order_id, {
-        deliverableType: DeliverableType.Schema,
-        deliverableText: JSON.stringify(result),
-      });
+    const req = parseRequest(rawPayload);
+    const result = await runAudit(req);
 
-      console.log(`[cap] Delivered result for order: ${e.order_id}`);
-    } catch (err) {
-      const reason =
-        err instanceof Error ? err.message : "Internal agent error.";
-      console.error(`[cap] Audit failed for order ${e.order_id}:`, reason);
-      await client.rejectOrder(e.order_id, reason);
-    }
-  });
+    await client.deliverOrder(e.order_id, {
+      deliverableType: DeliverableType.Schema,
+      deliverableText: JSON.stringify(result),
+    });
+
+    console.log(`[cap] Delivered result for order: ${e.order_id}`);
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : "Internal agent error.";
+    console.error(`[cap] Audit failed for order ${e.order_id}:`, reason);
+    await client.rejectOrder(e.order_id, reason);
+  }
+});
 
   stream.on(EventType.OrderCompleted, (e: Event) => {
     if (!e.order_id) return;
