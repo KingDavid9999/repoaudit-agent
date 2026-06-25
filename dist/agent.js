@@ -99,7 +99,7 @@ async function startAgent() {
             const result = await runAudit(req);
             await client.deliverOrder(e.order_id, {
                 deliverableType: sdk_1.DeliverableType.Schema,
-                deliverableText: JSON.stringify(result),
+                deliverableText: JSON.stringify({ result: JSON.stringify(result) }),
             });
             console.log(`[cap] Delivered result for order: ${e.order_id}`);
         }
