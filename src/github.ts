@@ -45,10 +45,13 @@ export async function fetchIssuesByNumber(
   repo: string,
   numbers: number[]
 ): Promise<GitHubIssue[]> {
-  const results = await Promise.all(
+  const results = await Promise.allSettled(
     numbers.map((n) =>
       githubFetch<GitHubIssue>(`${BASE}/repos/${repo}/issues/${n}`)
     )
   );
-  return results.filter((i) => !i.pull_request);
+  return results
+    .filter((r): r is PromiseFulfilledResult<GitHubIssue> => r.status === "fulfilled")
+    .map((r) => r.value)
+    .filter((i) => !i.pull_request);
 }

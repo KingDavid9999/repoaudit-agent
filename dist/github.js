@@ -41,6 +41,9 @@ async function fetchOpenIssues(repo) {
     return issues;
 }
 async function fetchIssuesByNumber(repo, numbers) {
-    const results = await Promise.all(numbers.map((n) => githubFetch(`${BASE}/repos/${repo}/issues/${n}`)));
-    return results.filter((i) => !i.pull_request);
+    const results = await Promise.allSettled(numbers.map((n) => githubFetch(`${BASE}/repos/${repo}/issues/${n}`)));
+    return results
+        .filter((r) => r.status === "fulfilled")
+        .map((r) => r.value)
+        .filter((i) => !i.pull_request);
 }
